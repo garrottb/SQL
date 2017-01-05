@@ -1,6 +1,34 @@
 use master
 go
+declare @GB    float
+declare @MB    float
+declare @KB    float
+declare @B     float
+
+set @GB   =  (cast(8192 as float) / cast(1073741824 as float))
+set @MB   =  (cast(8192 as float) / cast(1048576 as float))
+set @KB   =  (cast(8192 as float) / cast(1024 as float))
+set @B    =  (cast(8192 as float))
+
 select b.name DB_Name, a.name Logical_name, a.filename File_Name,
+(case when a.growth > 100                  
+            then (case when (cast(a.growth as float) * @GB) > (cast(1 as float))
+                       then (convert(varchar(16),(cast(a.growth as float) * @GB)) +  ' GB')
+                       else (case when (cast(a.growth as float) * @MB) > (cast(1 as float))
+                                  then  (convert(varchar(16),(cast(a.growth as float) * @MB)) + ' MB')
+                                  else (case when (cast(a.growth as float) * @KB) > (cast(1 as float))
+                                             then (convert(varchar(16),(cast(a.growth as float) * @KB)) + ' KB')
+                                             else ((convert(varchar(16),(cast(a.growth as float) * @B))) + ' Bytes')
+                                        end)
+                             end)
+                  end)
+            when a.growth < 100
+            then (case a.growth
+                       when 0 then 'N/A'
+                       else (convert(varchar(16),(cast(a.growth as float))) + ' %')
+                  end)
+            else ''
+       end) as Growth,
 cast((a.size * 8.00) / 1024 as numeric(12,2)) as DB_Size_in_MB,
 case when a.growth > 100 then 'In MB' else 'In Percentage' end File_Growth,
 cast(case when a.growth > 100 then (a.growth * 8.00) / 1024
